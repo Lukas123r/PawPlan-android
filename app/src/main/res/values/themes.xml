@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.PawPlan.Base" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.PawPlan" parent="Theme.PawPlan.Base" />
+
+    <!-- Splash Screen Theme -->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@android:color/black</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/logo_company</item>
+        <item name="postSplashScreenTheme">@style/Theme.PawPlan</item>  <!-- Theme, das nach dem Splash Screen verwendet wird -->
+    </style>
+</resources>

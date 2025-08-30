@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "813122722411",
+    "project_id": "pawplan-3287b",
+    "storage_bucket": "pawplan-3287b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:813122722411:android:42c88fbb597ddb92e1ef2e",
+        "android_client_info": {
+          "package_name": "de.lshorizon.pawplan"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "813122722411-bbhnq8lrvbt213v25smvkeiusin176ll.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBNO7RKpnlvQl5AtbOAxHPxfHvn729oCk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "813122722411-bbhnq8lrvbt213v25smvkeiusin176ll.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
