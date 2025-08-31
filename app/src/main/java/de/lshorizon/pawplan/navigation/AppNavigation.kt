@@ -46,7 +46,21 @@ fun PawPlanNavHost() {
             )
         }
         composable(AppDestinations.REGISTER_ROUTE) {
-            RegisterScreen(navController = navController)
+            var registerUiState by remember { mutableStateOf(de.lshorizon.pawplan.ui.screens.auth.RegisterUiState()) }
+            RegisterScreen(
+                uiState = registerUiState,
+                onEmailChange = { registerUiState = registerUiState.copy(email = it) },
+                onPasswordChange = { registerUiState = registerUiState.copy(password = it) },
+                onConfirmPasswordChange = { registerUiState = registerUiState.copy(confirmPassword = it) },
+                onRegisterClick = {
+                    // TODO: Implement register logic
+                    navController.navigate(AppDestinations.PET_LIST_ROUTE) {
+                        popUpTo(AppDestinations.LOGIN_ROUTE) { inclusive = true }
+                    }
+                },
+                onGoogleSignInClick = { /* TODO: Implement Google Sign-In */ },
+                onLoginClick = { navController.popBackStack() }
+            )
         }
         composable(AppDestinations.PET_LIST_ROUTE) {
             PetListScreen(navController = navController)

@@ -39,6 +39,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.lshorizon.pawplan.R
+import de.lshorizon.pawplan.ui.screens.auth.components.GoogleSignInButton
 import de.lshorizon.pawplan.ui.theme.AccentOrange
 import de.lshorizon.pawplan.ui.theme.GoogleButtonBorder
 import de.lshorizon.pawplan.ui.theme.GoogleButtonText
@@ -82,7 +83,7 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             singleLine = true,
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(12.dp)
         )
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -94,7 +95,7 @@ fun LoginScreen(
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             singleLine = true,
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(12.dp)
         )
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -103,7 +104,7 @@ fun LoginScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp),
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = LoginButtonOrange,
                 contentColor = Color.White
@@ -111,14 +112,30 @@ fun LoginScreen(
         ) {
             Text("Login")
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         TextButton(onClick = onForgotPasswordClick) {
             Text("Forgot password?", color = AccentOrange)
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         GoogleSignInButton(onClick = onGoogleSignInClick)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            androidx.compose.material3.Divider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outline)
+            Text(
+                text = "or",
+                modifier = Modifier.padding(horizontal = 16.dp),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            androidx.compose.material3.Divider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outline)
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -127,36 +144,13 @@ fun LoginScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp),
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = RegisterButtonBlue,
                 contentColor = Color.White
             )
         ) {
             Text("Register")
-        }
-    }
-}
-
-@Composable
-fun GoogleSignInButton(onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp),
-        shape = RoundedCornerShape(8.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, GoogleButtonBorder)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            // Placeholder for Google Icon
-            Text("G", style = MaterialTheme.typography.bodyLarge.copy(color = GoogleButtonText))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Sign in with Google", color = GoogleButtonText)
         }
     }
 }
