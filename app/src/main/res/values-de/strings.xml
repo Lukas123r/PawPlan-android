@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">PawPlan</string>
+    <string name="default_web_client_id">813122722411-bbhnq8lrvbt213v25smvkeiusin176ll.apps.googleusercontent.com</string>
+    <!-- Onboarding strings (DE) -->
+    <string name="onb_welcome_title">Willkommen bei PawPlan</string>
+    <string name="onb_welcome_l1">Alle Haustiere, Erinnerungen und Dokumente an einem Ort.</string>
+    <string name="onb_welcome_l2">Organisiert bleiben und keinen Tierarzttermin verpassen.</string>
+
+    <string name="onb_profiles_title">Tierprofile erstellen</string>
+    <string name="onb_profiles_l1">Name, Rasse, Geburtsdatum und ein Foto hinzufügen.</string>
+    <string name="onb_profiles_l2">Schneller Zugriff auf alle Infos zu deinem Tier.</string>
+
+    <string name="onb_reminders_title">Erinnerungen planen</string>
+    <string name="onb_reminders_l1">Impfungen, Tierarzttermine und Pflege einplanen.</string>
+    <string name="onb_reminders_l2">Benachrichtigungen erhalten und immer pünktlich sein.</string>
+
+    <string name="onb_docs_title">Dokumente organisieren</string>
+    <string name="onb_docs_l1">Impfpass, Berichte und mehr hochladen.</string>
+    <string name="onb_docs_l2">Mit Vorschau alles schnell wiederfinden.</string>
+
+    <string name="onb_get_started_title">Los geht’s</string>
+    <string name="onb_get_started_l1">Mit Google oder E‑Mail anmelden.</string>
+    <string name="onb_get_started_l2">Erstelle dein erstes Tier und deine erste Erinnerung.</string>
+
+    <string name="onb_next">Weiter</string>
+    <string name="onb_finish">Fertig</string>
+    <string name="onb_skip">Überspringen</string>
+</resources>

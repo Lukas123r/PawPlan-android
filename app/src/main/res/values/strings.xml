@@ -1,3 +1,28 @@
 <resources>
     <string name="app_name">PawPlan</string>
+    <string name="default_web_client_id">813122722411-bbhnq8lrvbt213v25smvkeiusin176ll.apps.googleusercontent.com</string>
+    <!-- Onboarding strings (EN) -->
+    <string name="onb_welcome_title">Welcome to PawPlan</string>
+    <string name="onb_welcome_l1">All your pets, reminders and documents in one place.</string>
+    <string name="onb_welcome_l2">Stay organized and never miss a vet visit again.</string>
+
+    <string name="onb_profiles_title">Create Pet Profiles</string>
+    <string name="onb_profiles_l1">Add name, breed, birthdate and a photo.</string>
+    <string name="onb_profiles_l2">Keep quick access to each pet’s info.</string>
+
+    <string name="onb_reminders_title">Plan Reminders</string>
+    <string name="onb_reminders_l1">Schedule vaccinations, vet appointments and care.</string>
+    <string name="onb_reminders_l2">Get notified so you’re always on time.</string>
+
+    <string name="onb_docs_title">Organize Documents</string>
+    <string name="onb_docs_l1">Upload vaccination cards, reports and more.</string>
+    <string name="onb_docs_l2">Find everything fast with previews.</string>
+
+    <string name="onb_get_started_title">Get Started</string>
+    <string name="onb_get_started_l1">Sign in with Google or email.</string>
+    <string name="onb_get_started_l2">Add your first pet, then create your first reminder.</string>
+
+    <string name="onb_next">Next</string>
+    <string name="onb_finish">Finish</string>
+    <string name="onb_skip">Skip</string>
 </resources>

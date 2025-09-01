@@ -4,10 +4,10 @@ import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
@@ -16,35 +16,56 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val LightColorScheme = lightColorScheme(
+    // Brand
     primary = PrimaryBlue,
+    onPrimary = LightBackground,
+    primaryContainer = PrimaryBlue,
+    onPrimaryContainer = LightBackground,
     secondary = SecondaryGreen,
+    onSecondary = LightBackground,
+    secondaryContainer = SecondaryGreen,
+    onSecondaryContainer = LightBackground,
     tertiary = AccentOrange,
+    onTertiary = LightBackground,
+    tertiaryContainer = AccentOrange,
+    onTertiaryContainer = LightBackground,
+    // Neutrals
     background = LightBackground,
-    // surface = Color(0xFFFFFBFE), // Beispiel für weitere Farben
-    // onPrimary = Color.White,
-    // onSecondary = Color.White,
-    // onTertiary = Color.White,
-    // onBackground = Color(0xFF1C1B1F),
-    // onSurface = Color(0xFF1C1B1F),
+    onBackground = OnBackgroundLight,
+    surface = SurfaceLight,
+    onSurface = OnBackgroundLight,
+    surfaceVariant = SurfaceVariantLight,
+    onSurfaceVariant = OnSurfaceVariantLight,
+    outline = OutlineLight,
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryBlue, // Oft möchte man Primärfarben im Darkmode leicht anpassen, hier erstmal gleich
+    // Brand
+    primary = PrimaryBlue,
+    onPrimary = DarkBackground,
+    primaryContainer = PrimaryBlue,
+    onPrimaryContainer = DarkBackground,
     secondary = SecondaryGreen,
+    onSecondary = DarkBackground,
+    secondaryContainer = SecondaryGreen,
+    onSecondaryContainer = DarkBackground,
     tertiary = AccentOrange,
+    onTertiary = DarkBackground,
+    tertiaryContainer = AccentOrange,
+    onTertiaryContainer = DarkBackground,
+    // Neutrals
     background = DarkBackground,
-    // surface = Color(0xFF1C1B1F), // Beispiel für weitere Farben
-    // onPrimary = Color.Black,
-    // onSecondary = Color.Black,
-    // onTertiary = Color.Black,
-    // onBackground = Color(0xFFE6E1E5),
-    // onSurface = Color(0xFFE6E1E5),
+    onBackground = OnBackgroundDark,
+    surface = SurfaceDark,
+    onSurface = OnBackgroundDark,
+    surfaceVariant = SurfaceVariantDark,
+    onSurfaceVariant = OnSurfaceVariantDark,
+    outline = OutlineDark,
 )
 
 @Composable
 fun PawPlanTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -60,14 +81,15 @@ fun PawPlanTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb() // Kann auch background sein, je nach Design
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme // Für hellen/dunklen Statusbar-Text
+            @Suppress("DEPRECATION")
+            run { window.statusBarColor = colorScheme.background.toArgb() }
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography, // Wird im nächsten Schritt erstellt
+        typography = Typography,
         content = content
     )
 }

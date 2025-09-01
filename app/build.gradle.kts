@@ -41,6 +41,10 @@ android {
 }
 
 dependencies {
+    implementation(libs.coil.compose)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play)
+    implementation(libs.google.identity.googleid)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -51,6 +55,8 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material.icons)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.airbnb.lottie.compose)
 
     // Splash Screen
     implementation("androidx.core:core-splashscreen:1.0.1") // Hinzugefügt

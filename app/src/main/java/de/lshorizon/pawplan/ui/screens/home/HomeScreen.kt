@@ -1,0 +1,245 @@
+package de.lshorizon.pawplan.ui.screens.home
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.MedicalServices
+import androidx.compose.material.icons.outlined.Pets
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material.icons.outlined.Vaccines
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import de.lshorizon.pawplan.R
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import de.lshorizon.pawplan.ui.screens.pets.Species
+import de.lshorizon.pawplan.ui.theme.AccentOrange
+import de.lshorizon.pawplan.ui.theme.PrimaryBlue
+import de.lshorizon.pawplan.ui.theme.SecondaryGreen
+import de.lshorizon.pawplan.ui.theme.LoginButtonOrange
+import de.lshorizon.pawplan.ui.theme.RegisterButtonBlue
+
+data class HomeReminder(val id: Int, val title: String, val time: String, val icon: ImageVector, val tint: Color)
+data class HomeDocument(val id: Int, val name: String, val date: String, val icon: ImageVector)
+data class HomePet(
+    val id: Int,
+    val name: String,
+    val age: String,
+    val species: Species = Species.DOG,
+    val imageUrl: String? = null
+)
+
+private val sampleReminders = listOf(
+    HomeReminder(1, "Vaccination: Bello", "Tomorrow 09:00", Icons.Outlined.Vaccines, SecondaryGreen),
+    HomeReminder(2, "Vet appointment: Luna", "Fri 14:30", Icons.Outlined.MedicalServices, PrimaryBlue)
+)
+
+private val sampleDocuments = listOf(
+    HomeDocument(1, "Vaccination_Bello.pdf", "2 days ago", Icons.Outlined.PictureAsPdf),
+    HomeDocument(2, "LabReport_Max.pdf", "1 week ago", Icons.Outlined.Description)
+)
+
+private val samplePets = listOf(
+    HomePet(1, "Bello", "3 years", species = Species.DOG, imageUrl = null),
+    HomePet(2, "Luna", "1 year", species = Species.CAT, imageUrl = null)
+)
+
+@Composable
+fun HomeScreen(
+    onAddPet: () -> Unit,
+    onAddReminder: () -> Unit,
+    onUploadDocument: () -> Unit,
+    onOpenPet: () -> Unit,
+    onOpenDocuments: () -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            // Header Logo similar feel as Login
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Image(
+                    painter = painterResource(id = R.drawable.pawplan_plain),
+                    contentDescription = "App Logo",
+                    modifier = Modifier.size(72.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Welcome back", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            }
+        }
+
+        item { SectionTitle("Upcoming Reminders") }
+        items(sampleReminders) { r ->
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(r.icon, contentDescription = null, tint = r.tint)
+                    Spacer(Modifier.size(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(r.title, style = MaterialTheme.typography.titleMedium)
+                        Text(r.time, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+
+        item { SectionTitle("Recently Added Documents") }
+        items(sampleDocuments) { d ->
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(d.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.size(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(d.name, style = MaterialTheme.typography.titleMedium)
+                        Text(d.date, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+
+        item { SectionTitle("My Pets") }
+        items(samplePets) { p ->
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HomePetAvatar(p)
+                    Spacer(Modifier.size(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(p.name, style = MaterialTheme.typography.titleMedium)
+                        Text(p.age, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+
+        item {
+            SectionTitle("Quick Actions")
+        }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(
+                    onClick = onAddPet,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = RegisterButtonBlue, contentColor = Color.White)
+                ) { Icon(Icons.Outlined.Pets, null); Spacer(Modifier.size(8.dp)); Text("New Pet") }
+
+                Button(
+                    onClick = onAddReminder,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = LoginButtonOrange, contentColor = Color.White)
+                ) { Icon(Icons.Outlined.Event, null); Spacer(Modifier.size(8.dp)); Text("New Reminder") }
+
+                Button(
+                    onClick = onUploadDocument,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp)
+                ) { Icon(Icons.Outlined.Description, null); Spacer(Modifier.size(8.dp)); Text("Upload Document") }
+            }
+        }
+
+        item { HorizontalDivider() }
+
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                Text("Tap the profile icon above for account & settings", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(text, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 8.dp))
+}
+
+@Composable
+private fun HomePetAvatar(pet: HomePet, modifier: Modifier = Modifier) {
+    val size = 40.dp
+    if (pet.imageUrl != null) {
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(pet.imageUrl)
+                .crossfade(true)
+                .build(),
+            contentDescription = "Pet photo",
+            modifier = modifier.size(size).clip(CircleShape),
+            contentScale = ContentScale.Crop
+        )
+    } else {
+        val emoji = when (pet.species) {
+            Species.DOG -> "🐶"
+            Species.CAT -> "🐱"
+            Species.OTHER -> "🐾"
+        }
+        androidx.compose.foundation.layout.Box(
+            modifier = modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(emoji)
+        }
+    }
+}
