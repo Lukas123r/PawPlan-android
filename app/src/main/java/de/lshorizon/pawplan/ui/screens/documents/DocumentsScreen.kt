@@ -29,6 +29,11 @@ import androidx.compose.ui.graphics.Color
 import de.lshorizon.pawplan.ui.theme.AccentOrange
 import de.lshorizon.pawplan.ui.theme.PrimaryBlue
 import de.lshorizon.pawplan.ui.theme.SecondaryGreen
+import de.lshorizon.pawplan.ui.theme.documentCategoryFor
+import de.lshorizon.pawplan.ui.theme.colorFor
+import androidx.compose.ui.tooling.preview.Preview
+import android.content.res.Configuration
+import androidx.navigation.compose.rememberNavController
 
 data class DocumentItem(val id: Int, val name: String, val date: String, val icon: ImageVector, val tint: Color)
 
@@ -52,6 +57,7 @@ fun DocumentsScreen(navController: NavController) {
             Text("Documents", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 8.dp))
         }
         items(sampleDocs) { d ->
+            val tint = colorFor(documentCategoryFor(d.name))
             Card(
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant)
@@ -62,11 +68,23 @@ fun DocumentsScreen(navController: NavController) {
                         .padding(16.dp),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Icon(d.icon, contentDescription = null, tint = d.tint)
+                    Icon(d.icon, contentDescription = null, tint = tint)
                     Text(d.name, style = MaterialTheme.typography.titleMedium)
                     Text(d.date, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
     }
+}
+
+@Preview(name = "Light Mode", showBackground = true)
+@Composable
+private fun DocumentsScreenPreview() {
+    DocumentsScreen(navController = rememberNavController())
+}
+
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Composable
+private fun DocumentsScreenPreviewDark() {
+    DocumentsScreen(navController = rememberNavController())
 }

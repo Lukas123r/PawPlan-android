@@ -24,9 +24,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,7 +41,12 @@ import androidx.compose.ui.unit.dp
 import de.lshorizon.pawplan.R
 import de.lshorizon.pawplan.data.OnboardingRepository
 import de.lshorizon.pawplan.ui.theme.AccentOrange
+import de.lshorizon.pawplan.ui.theme.PrimaryBlue
+import de.lshorizon.pawplan.ui.theme.SecondaryGreen
 import kotlinx.coroutines.launch
+import androidx.compose.ui.tooling.preview.Preview
+import android.content.res.Configuration
+import de.lshorizon.pawplan.ui.theme.LoginButtonOrange
 
 private data class OnboardingPage(
     val title: String,
@@ -75,7 +83,7 @@ fun OnboardingScreen(onFinish: () -> Unit) {
                 stringResource(id = R.string.onb_reminders_l2)
             ),
             icon = Icons.Outlined.Event,
-            tint = MaterialTheme.colorScheme.tertiary
+            tint = SecondaryGreen
         ),
         OnboardingPage(
             title = stringResource(id = R.string.onb_docs_title),
@@ -84,7 +92,7 @@ fun OnboardingScreen(onFinish: () -> Unit) {
                 stringResource(id = R.string.onb_docs_l2)
             ),
             icon = Icons.Outlined.Description,
-            tint = MaterialTheme.colorScheme.primary
+            tint = PrimaryBlue
         ),
         OnboardingPage(
             title = stringResource(id = R.string.onb_get_started_title),
@@ -100,6 +108,7 @@ fun OnboardingScreen(onFinish: () -> Unit) {
     val pagerState = rememberPagerState { pages.size }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val (nameInput, setNameInput) = remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -128,6 +137,18 @@ fun OnboardingScreen(onFinish: () -> Unit) {
                         Text("• $line", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(vertical = 4.dp))
                     }
                 }
+
+                // On last page, ask for user's name
+                if (page == pages.lastIndex) {
+                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.size(16.dp))
+                    OutlinedTextField(
+                        value = nameInput,
+                        onValueChange = setNameInput,
+                        label = { Text(stringResource(id = R.string.onb_name_label)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(0.8f)
+                    )
+                }
             }
         }
 
@@ -154,6 +175,9 @@ fun OnboardingScreen(onFinish: () -> Unit) {
             OutlinedButton(
                 onClick = {
                 scope.launch {
+                    if (nameInput.isNotBlank()) {
+                        OnboardingRepository(context).setUserName(nameInput.trim())
+                    }
                     OnboardingRepository(context).setOnboardingDone(true)
                     onFinish()
                 }
@@ -167,6 +191,9 @@ fun OnboardingScreen(onFinish: () -> Unit) {
                 onClick = {
                     scope.launch {
                         if (isLast) {
+                            if (nameInput.isNotBlank()) {
+                                OnboardingRepository(context).setUserName(nameInput.trim())
+                            }
                             OnboardingRepository(context).setOnboardingDone(true)
                             onFinish()
                         } else {
@@ -174,8 +201,20 @@ fun OnboardingScreen(onFinish: () -> Unit) {
                         }
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = AccentOrange)
+                colors = ButtonDefaults.buttonColors(containerColor = LoginButtonOrange)
             ) { Text(if (isLast) stringResource(id = R.string.onb_finish) else stringResource(id = R.string.onb_next)) }
         }
     }
+}
+
+@Preview(name = "Light Mode", showBackground = true)
+@Composable
+private fun OnboardingScreenPreview() {
+    OnboardingScreen(onFinish = {})
+}
+
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Composable
+private fun OnboardingScreenPreviewDark() {
+    OnboardingScreen(onFinish = {})
 }

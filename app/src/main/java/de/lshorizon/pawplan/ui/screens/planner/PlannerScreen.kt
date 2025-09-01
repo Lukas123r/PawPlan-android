@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import android.content.res.Configuration
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -38,6 +39,8 @@ import de.lshorizon.pawplan.ui.theme.AccentOrange
 import de.lshorizon.pawplan.ui.theme.PrimaryBlue
 import de.lshorizon.pawplan.ui.theme.SecondaryGreen
 import androidx.navigation.compose.rememberNavController
+import de.lshorizon.pawplan.ui.theme.reminderCategoryFor
+import de.lshorizon.pawplan.ui.theme.colorFor
 
 data class Reminder(val id: Int, val title: String, val time: String, val icon: ImageVector, val tint: Color)
 
@@ -52,9 +55,6 @@ val sampleReminders = listOf(
 @Composable
 fun PlannerScreen(navController: NavController) {
     Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Planner") })
-        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { /* TODO: Navigate to add reminder screen */ },
@@ -93,7 +93,8 @@ fun ReminderListItem(reminder: Reminder, onClick: () -> Unit) {
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(reminder.icon, contentDescription = null, tint = reminder.tint)
+            val tint = colorFor(reminderCategoryFor(reminder.title))
+            Icon(reminder.icon, contentDescription = null, tint = tint)
             androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.ui.Modifier.size(12.dp))
             Column {
                 Text(text = reminder.title, style = MaterialTheme.typography.headlineSmall)
@@ -103,8 +104,14 @@ fun ReminderListItem(reminder: Reminder, onClick: () -> Unit) {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(name = "Light Mode", showBackground = true)
 @Composable
 fun PlannerScreenPreview() {
+    PlannerScreen(navController = rememberNavController())
+}
+
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Composable
+fun PlannerScreenPreviewDark() {
     PlannerScreen(navController = rememberNavController())
 }

@@ -25,4 +25,8 @@
     <string name="onb_next">Weiter</string>
     <string name="onb_finish">Fertig</string>
     <string name="onb_skip">Überspringen</string>
+    <string name="onb_name_label">Dein Name</string>
+    <string name="settings_profile_name">Profilname</string>
+    <string name="settings_name_label">Name</string>
+    <string name="save">Speichern</string>
 </resources>

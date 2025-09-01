@@ -1,6 +1,5 @@
 package de.lshorizon.pawplan.ui.screens.home
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -37,11 +36,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import de.lshorizon.pawplan.R
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import de.lshorizon.pawplan.ui.screens.pets.Species
@@ -50,6 +47,11 @@ import de.lshorizon.pawplan.ui.theme.PrimaryBlue
 import de.lshorizon.pawplan.ui.theme.SecondaryGreen
 import de.lshorizon.pawplan.ui.theme.LoginButtonOrange
 import de.lshorizon.pawplan.ui.theme.RegisterButtonBlue
+import de.lshorizon.pawplan.ui.theme.WarningYellow
+import androidx.compose.ui.tooling.preview.Preview
+import android.content.res.Configuration
+import de.lshorizon.pawplan.ui.theme.reminderCategoryFor
+import de.lshorizon.pawplan.ui.theme.colorFor
 
 data class HomeReminder(val id: Int, val title: String, val time: String, val icon: ImageVector, val tint: Color)
 data class HomeDocument(val id: Int, val name: String, val date: String, val icon: ImageVector)
@@ -65,6 +67,55 @@ private val sampleReminders = listOf(
     HomeReminder(1, "Vaccination: Bello", "Tomorrow 09:00", Icons.Outlined.Vaccines, SecondaryGreen),
     HomeReminder(2, "Vet appointment: Luna", "Fri 14:30", Icons.Outlined.MedicalServices, PrimaryBlue)
 )
+
+private enum class ReminderCategory { VACCINATION, VET, DEWORMING, GROOMING, WALK, FEEDING, OTHER }
+
+private fun categoryFor(title: String): ReminderCategory {
+    val t = title.lowercase()
+    return when {
+        t.contains("vaccination") || t.contains("impf") -> ReminderCategory.VACCINATION
+        t.contains("vet") || t.contains("tierarzt") -> ReminderCategory.VET
+        t.contains("deworm") || t.contains("entwurm") -> ReminderCategory.DEWORMING
+        t.contains("groom") || t.contains("pflege") -> ReminderCategory.GROOMING
+        t.contains("walk") || t.contains("spazier") -> ReminderCategory.WALK
+        t.contains("feed") || t.contains("fütter") || t.contains("fuetter") -> ReminderCategory.FEEDING
+        else -> ReminderCategory.OTHER
+    }
+}
+
+@Preview(name = "Light Mode", showBackground = true)
+@Composable
+private fun HomeScreenPreview() {
+    HomeScreen(
+        onAddPet = {},
+        onAddReminder = {},
+        onUploadDocument = {},
+        onOpenPet = {},
+        onOpenDocuments = {}
+    )
+}
+
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Composable
+private fun HomeScreenPreviewDark() {
+    HomeScreen(
+        onAddPet = {},
+        onAddReminder = {},
+        onUploadDocument = {},
+        onOpenPet = {},
+        onOpenDocuments = {}
+    )
+}
+
+private fun colorForCategory(cat: ReminderCategory): Color = when (cat) {
+    ReminderCategory.VACCINATION -> SecondaryGreen
+    ReminderCategory.VET -> WarningYellow
+    ReminderCategory.DEWORMING -> AccentOrange
+    ReminderCategory.GROOMING -> PrimaryBlue
+    ReminderCategory.WALK -> PrimaryBlue
+    ReminderCategory.FEEDING -> LoginButtonOrange
+    ReminderCategory.OTHER -> PrimaryBlue
+}
 
 private val sampleDocuments = listOf(
     HomeDocument(1, "Vaccination_Bello.pdf", "2 days ago", Icons.Outlined.PictureAsPdf),
@@ -89,21 +140,10 @@ fun HomeScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
-            // Header Logo similar feel as Login
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                Image(
-                    painter = painterResource(id = R.drawable.pawplan_plain),
-                    contentDescription = "App Logo",
-                    modifier = Modifier.size(72.dp)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Welcome back", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-            }
-        }
 
         item { SectionTitle("Upcoming Reminders") }
         items(sampleReminders) { r ->
+            val tint = colorFor(reminderCategoryFor(r.title))
             Card(
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -114,7 +154,7 @@ fun HomeScreen(
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(r.icon, contentDescription = null, tint = r.tint)
+                    Icon(r.icon, contentDescription = null, tint = tint)
                     Spacer(Modifier.size(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(r.title, style = MaterialTheme.typography.titleMedium)

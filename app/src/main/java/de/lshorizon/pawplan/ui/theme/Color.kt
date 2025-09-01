@@ -3,8 +3,10 @@ package de.lshorizon.pawplan.ui.theme
 import androidx.compose.ui.graphics.Color
 
 val PrimaryBlue = Color(0xFF4A90E2)
-val SecondaryGreen = Color(0xFF6FCF97)
+val SecondaryGreen = Color(0xFF2BD006)
 val AccentOrange = Color(0xFFF2994A)
+val WarningYellow = Color(0xFFFFC107)
+val DangerRed = Color(0xFFE53935)
 
 val DarkBackground = Color(0xFF000000)
 val LightBackground = Color(0xFFFFFFFF)
