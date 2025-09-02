@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+match /databases/{database}/documents {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+
+      match /pets/{docId} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['id','name','breed','birthdate','species','imageUrl'])
+          && request.resource.data.id is int && request.resource.data.id >= 0
+          && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+          && request.resource.data.breed is string
+          && request.resource.data.birthdate is string
+          && request.resource.data.species in ['DOG','CAT','OTHER']
+          && (!request.resource.data.keys().hasAny(['imageUrl']) || request.resource.data.imageUrl is string);
+        allow delete: if isOwner(uid);
+      }
+
+      match /documents/{docId} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['name','url','mimeType','createdAt'])
+          && request.resource.data.name is string && request.resource.data.name.size() > 0
+          && request.resource.data.url is string && request.resource.data.url.matches('https?://.*')
+          && request.resource.data.mimeType is string
+          && request.resource.data.createdAt is int;
+        allow delete: if isOwner(uid);
+      }
+
+      match /reminders/{docId} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['id','title','time'])
+          && request.resource.data.id is int && request.resource.data.id >= 0
+          && request.resource.data.title is string && request.resource.data.title.size() > 0
+          && request.resource.data.time is string;
+        allow delete: if isOwner(uid);
+      }
+
+      match /{collection=**}/{docId} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    match /{document=**} { allow read, write: if false; }
+}
+}

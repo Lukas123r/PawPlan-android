@@ -1,0 +1,22 @@
+rules_version = '2';
+service firebase.storage {
+match /b/{bucket}/o {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    match /users/{uid}/pets/{file} {
+      allow read, write: if isOwner(uid);
+    }
+
+    match /users/{uid}/documents/{file} {
+      allow read: if isOwner(uid);
+      allow write: if isOwner(uid)
+        && request.resource.size < 10 * 1024 * 1024
+        && (request.resource.contentType.matches('image/.*')
+            || request.resource.contentType == 'application/pdf');
+    }
+
+    match /{path=**} { allow read, write: if false; }
+}
+}
