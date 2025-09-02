@@ -1,32 +1,52 @@
 package de.lshorizon.pawplan.ui.screens.pets
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.net.Uri
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import de.lshorizon.pawplan.data.repo.PetRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-class PetViewModel : ViewModel() {
-    private val _pets = MutableStateFlow<List<Pet>>(listOf(
-        Pet(1, "Bello", "Golden Retriever", birthdate = "2021-05-01", species = Species.DOG),
-        Pet(2, "Lucy", "Labrador", birthdate = "2022-01-15", species = Species.DOG),
-        Pet(3, "Max", "Domestic Shorthair", birthdate = "2020-09-30", species = Species.CAT),
-        Pet(4, "Luna", "Beagle", birthdate = "2023-03-12", species = Species.DOG)
-    ))
+class PetViewModel(app: Application) : AndroidViewModel(app) {
+    private val repo = PetRepository(app.applicationContext)
+    private val _pets = MutableStateFlow<List<Pet>>(emptyList())
     val pets: StateFlow<List<Pet>> = _pets
+
+    init {
+        viewModelScope.launch {
+            repo.observePets().collect { _pets.value = it }
+        }
+    }
 
     fun petById(id: Int): Pet? = _pets.value.firstOrNull { it.id == id }
 
-    fun addPet(name: String, breed: String, birthdate: String, species: Species, imageUrl: String?) {
-        val nextId = (_pets.value.maxOfOrNull { it.id } ?: 0) + 1
-        _pets.update { it + Pet(nextId, name, breed, birthdate, species, imageUrl) }
+    fun addOrUpdatePet(pet: Pet, imageUri: Uri?) {
+        viewModelScope.launch { repo.addOrUpdatePet(pet, imageUri) }
     }
 
-    fun updatePet(id: Int, name: String, breed: String, birthdate: String, species: Species, imageUrl: String?) {
-        _pets.update { list -> list.map { if (it.id == id) it.copy(name = name, breed = breed, birthdate = birthdate, species = species, imageUrl = imageUrl) else it } }
+    suspend fun savePet(pet: Pet, imageUri: Uri?): Boolean {
+        return try {
+            repo.addOrUpdatePet(pet, imageUri)
+            true
+        } catch (t: Throwable) {
+            false
+        }
     }
 
     fun deletePet(id: Int) {
-        _pets.update { it.filterNot { p -> p.id == id } }
+        val docId = _pets.value.firstOrNull { it.id == id }?.docId
+        viewModelScope.launch { repo.deletePet(id, docId) }
+    }
+
+    fun optimisticAdd(pet: Pet): String {
+        val tempId = "local-${System.currentTimeMillis()}"
+        _pets.value = _pets.value + pet.copy(docId = tempId)
+        return tempId
+    }
+
+    fun removeOptimistic(tempDocId: String) {
+        _pets.value = _pets.value.filterNot { it.docId == tempDocId }
     }
 }
-

@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -136,17 +137,35 @@ fun NameSetting(name: String, onNameChange: (String) -> Unit, onSave: () -> Unit
 
 @Composable
 fun LogoutButton(onLogout: () -> Unit) {
+    var showConfirm by remember { mutableStateOf(false) }
     Button(
-        onClick = onLogout,
+        onClick = { showConfirm = true },
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = de.lshorizon.pawplan.ui.theme.LoginButtonOrange,
+            containerColor = de.lshorizon.pawplan.ui.theme.DangerRed,
             contentColor = androidx.compose.ui.graphics.Color.White
         )
-    ) {
-        Text("Logout")
+    ) { Text("Logout") }
+
+    if (showConfirm) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showConfirm = false },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    showConfirm = false
+                    onLogout()
+                }) { androidx.compose.material3.Text("Logout", color = de.lshorizon.pawplan.ui.theme.DangerRed) }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showConfirm = false }) {
+                    androidx.compose.material3.Text("Cancel")
+                }
+            },
+            title = { androidx.compose.material3.Text("Logout?") },
+            text = { androidx.compose.material3.Text("Are you sure you want to log out?") }
+        )
     }
 }
 

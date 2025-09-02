@@ -1,0 +1,300 @@
+package de.lshorizon.pawplan.ui.screens.home
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.MedicalServices
+import androidx.compose.material.icons.outlined.Pets
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material.icons.outlined.Vaccines
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import de.lshorizon.pawplan.ui.screens.pets.Species
+import de.lshorizon.pawplan.ui.screens.pets.Pet
+import de.lshorizon.pawplan.ui.screens.pets.PetViewModel
+import de.lshorizon.pawplan.ui.screens.pets.PetAvatar
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
+import de.lshorizon.pawplan.ui.theme.AccentOrange
+import de.lshorizon.pawplan.ui.theme.PrimaryBlue
+import de.lshorizon.pawplan.ui.theme.SecondaryGreen
+import de.lshorizon.pawplan.ui.theme.LoginButtonOrange
+import de.lshorizon.pawplan.ui.theme.RegisterButtonBlue
+import de.lshorizon.pawplan.ui.theme.WarningYellow
+import androidx.compose.ui.tooling.preview.Preview
+import android.content.res.Configuration
+import de.lshorizon.pawplan.ui.theme.reminderCategoryFor
+import de.lshorizon.pawplan.ui.theme.colorFor
+
+data class HomeReminder(val id: Int, val title: String, val time: String, val icon: ImageVector, val tint: Color)
+data class HomeDocument(val id: Int, val name: String, val date: String, val icon: ImageVector)
+
+private val sampleReminders = listOf(
+    HomeReminder(1, "Vaccination: Bello", "Tomorrow 09:00", Icons.Outlined.Vaccines, SecondaryGreen),
+    HomeReminder(2, "Vet appointment: Luna", "Fri 14:30", Icons.Outlined.MedicalServices, PrimaryBlue)
+)
+
+private enum class ReminderCategory { VACCINATION, VET, DEWORMING, GROOMING, WALK, FEEDING, OTHER }
+
+private fun categoryFor(title: String): ReminderCategory {
+    val t = title.lowercase()
+    return when {
+        t.contains("vaccination") || t.contains("impf") -> ReminderCategory.VACCINATION
+        t.contains("vet") || t.contains("tierarzt") -> ReminderCategory.VET
+        t.contains("deworm") || t.contains("entwurm") -> ReminderCategory.DEWORMING
+        t.contains("groom") || t.contains("pflege") -> ReminderCategory.GROOMING
+        t.contains("walk") || t.contains("spazier") -> ReminderCategory.WALK
+        t.contains("feed") || t.contains("fütter") || t.contains("fuetter") -> ReminderCategory.FEEDING
+        else -> ReminderCategory.OTHER
+    }
+}
+
+@Preview(name = "Light Mode", showBackground = true)
+@Composable
+private fun HomeScreenPreview() {
+    HomeScreen(
+        onAddPet = {},
+        onAddReminder = {},
+        onUploadDocument = {},
+        onOpenPetList = {},
+        onOpenDocuments = {},\r\n        onOpenPetDetail = {}\r\n    )
+}
+
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Composable
+private fun HomeScreenPreviewDark() {
+    HomeScreen(
+        onAddPet = {},
+        onAddReminder = {},
+        onUploadDocument = {},
+        onOpenPetList = {},
+        onOpenDocuments = {},\r\n        onOpenPetDetail = {}\r\n    )
+}
+
+private fun colorForCategory(cat: ReminderCategory): Color = when (cat) {
+    ReminderCategory.VACCINATION -> SecondaryGreen
+    ReminderCategory.VET -> WarningYellow
+    ReminderCategory.DEWORMING -> AccentOrange
+    ReminderCategory.GROOMING -> PrimaryBlue
+    ReminderCategory.WALK -> PrimaryBlue
+    ReminderCategory.FEEDING -> LoginButtonOrange
+    ReminderCategory.OTHER -> PrimaryBlue
+}
+
+private val sampleDocuments = listOf(
+    HomeDocument(1, "Vaccination_Bello.pdf", "2 days ago", Icons.Outlined.PictureAsPdf),
+    HomeDocument(2, "LabReport_Max.pdf", "1 week ago", Icons.Outlined.Description)
+)
+
+@Composable
+fun HomeScreen(
+    onAddPet: () -> Unit,
+    onAddReminder: () -> Unit,
+    onUploadDocument: () -> Unit,
+    onOpenPetList: () -> Unit,
+    onOpenDocuments: () -> Unit,
+    onOpenPetDetail: (Int) -> Unit = {}
+) {
+    val petViewModel: PetViewModel = viewModel()
+    val pets = petViewModel.pets.collectAsState().value
+    LazyColumn(
+        modifier = Modifier
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+
+        item { SectionTitle("Upcoming Reminders") }
+        items(sampleReminders) { r ->
+            val tint = colorFor(reminderCategoryFor(r.title))
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(r.icon, contentDescription = null, tint = tint)
+                    Spacer(Modifier.size(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(r.title, style = MaterialTheme.typography.titleMedium)
+                        Text(r.time, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+
+        item { SectionTitle("Recently Added Documents") }
+        items(sampleDocuments) { d ->
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(d.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.size(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(d.name, style = MaterialTheme.typography.titleMedium)
+                        Text(d.date, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+
+        item { SectionTitle("My Pets") }
+        items(pets) { p ->
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    PetAvatar(p)
+                    Spacer(Modifier.size(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(p.name, style = MaterialTheme.typography.titleMedium)
+                        val subtitle = if (p.breed.isNotBlank()) p.breed else p.species.name
+                        Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Button(onClick = { onOpenPetDetail(p.id) }) { Text("Open") }
+                }
+            }
+        }
+
+        item {
+            SectionTitle("Quick Actions")
+        }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(
+                    onClick = onAddPet,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = RegisterButtonBlue, contentColor = Color.White)
+                ) { Icon(Icons.Outlined.Pets, null); Spacer(Modifier.size(8.dp)); Text("New Pet") }
+
+                Button(
+                    onClick = onAddReminder,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = LoginButtonOrange, contentColor = Color.White)
+                ) { Icon(Icons.Outlined.Event, null); Spacer(Modifier.size(8.dp)); Text("New Reminder") }
+
+                Button(
+                    onClick = onUploadDocument,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp)
+                ) { Icon(Icons.Outlined.Description, null); Spacer(Modifier.size(8.dp)); Text("Upload Document") }
+            }
+        }
+
+        item { HorizontalDivider() }
+
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                Text("Tap the profile icon above for account & settings", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(text, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 8.dp))
+}
+
+@Composable
+// Pet avatar is reused from PetListScreen via PetAvatar
+package de.lshorizon.pawplan.ui.screens.home
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.MedicalServices
+import androidx.compose.material.icons.outlined.Pets
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material.icons.outlined.Vaccines
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import de.lshorizon.pawplan.ui.screens.pets.Species
+import de.lshorizon.pawplan.ui.screens.pets.Pet
+import de.lshorizon.pawplan.ui.screens.pets.PetViewModel
+import de.lshorizon.pawplan.ui.screens.pets.PetAvatar

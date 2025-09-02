@@ -2,11 +2,11 @@ package de.lshorizon.pawplan.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val PrimaryBlue = Color(0xFF4A90E2)
-val SecondaryGreen = Color(0xFF2BD006)
-val AccentOrange = Color(0xFFF2994A)
-val WarningYellow = Color(0xFFFFC107)
-val DangerRed = Color(0xFFE53935)
+val PrimaryBlue = Color(0xFF0073FF)
+val SecondaryGreen = Color(0xFF2DFF00)
+val AccentOrange = Color(0xFFFF7800)
+val WarningYellow = Color(0xFFFFBD00)
+val DangerRed = Color(0xFFFF0600)
 
 val DarkBackground = Color(0xFF000000)
 val LightBackground = Color(0xFFFFFFFF)
@@ -14,8 +14,8 @@ val LightBackground = Color(0xFFFFFFFF)
 val GoogleButtonBorder = Color(0xFFE0E0E0)
 val GoogleButtonText = Color(0xFF333333)
 
-val LoginButtonOrange = Color(0xFFFF9800)
-val RegisterButtonBlue = Color(0xFF2196F3)
+val LoginButtonOrange = Color(0xFFFF9700)
+val RegisterButtonBlue = Color(0xFF008EFF)
 
 // Neutrals for surfaces and content
 val SurfaceLight = Color(0xFFFFFFFF)

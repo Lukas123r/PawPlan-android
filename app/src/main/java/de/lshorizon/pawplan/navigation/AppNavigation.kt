@@ -11,6 +11,7 @@ import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Pets
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
@@ -37,6 +38,10 @@ import android.content.res.Configuration
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -73,6 +78,10 @@ object AppDestinations {
     const val PLANNER_ROUTE = "planner"
     const val SETTINGS_ROUTE = "settings"
     const val DOCUMENTS_ROUTE = "documents"
+    const val PLANNER_DETAIL_ROUTE = "planner_detail/{id}"
+    const val DOCUMENT_DETAIL_ROUTE = "document_detail/{id}"
+    const val DOCUMENT_UPLOAD_ROUTE = "document_upload"
+    const val REMINDER_ADD_ROUTE = "reminder_add"
 }
 
 @Composable
@@ -129,12 +138,14 @@ fun PawPlanNavHost(
         }
         composable(AppDestinations.HOME_ROUTE) {
             MainContainer(currentRoute = AppDestinations.HOME_ROUTE, navController = navController) {
+                val petViewModel: de.lshorizon.pawplan.ui.screens.pets.PetViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
                 de.lshorizon.pawplan.ui.screens.home.HomeScreen(
                     onAddPet = { navController.navigate(AppDestinations.PET_LIST_ROUTE) },
                     onAddReminder = { navController.navigate(AppDestinations.PLANNER_ROUTE) },
                     onUploadDocument = { navController.navigate(AppDestinations.DOCUMENTS_ROUTE) },
-                    onOpenPet = { navController.navigate(AppDestinations.PET_LIST_ROUTE) },
-                    onOpenDocuments = { navController.navigate(AppDestinations.DOCUMENTS_ROUTE) }
+                    onOpenPetList = { navController.navigate(AppDestinations.PET_LIST_ROUTE) },
+                    onOpenDocuments = { navController.navigate(AppDestinations.DOCUMENTS_ROUTE) },
+                    onOpenPetDetail = { id -> navController.navigate("${AppDestinations.PET_DETAIL_ROUTE.replace("{id}", "$id")}") }
                 )
             }
         }
@@ -159,7 +170,7 @@ fun PawPlanNavHost(
             }
         }
         composable(AppDestinations.PET_DETAIL_ROUTE) { backStackEntry ->
-            MainContainer(currentRoute = AppDestinations.PET_LIST_ROUTE, navController = navController) {
+            MainContainer(currentRoute = AppDestinations.PET_LIST_ROUTE, navController = navController, showPetSearch = false, showBackButton = true) {
                 val petViewModel: PetViewModel = viewModel()
                 val id = backStackEntry.arguments?.getString("id")?.toIntOrNull()
                 if (id != null) {
@@ -168,13 +179,13 @@ fun PawPlanNavHost(
             }
         }
         composable(AppDestinations.PET_EDIT_ROUTE) {
-            MainContainer(currentRoute = AppDestinations.PET_LIST_ROUTE, navController = navController) {
+            MainContainer(currentRoute = AppDestinations.PET_LIST_ROUTE, navController = navController, showPetSearch = false, showBackButton = true) {
                 val petViewModel: PetViewModel = viewModel()
                 EditPetScreen(navController = navController, petViewModel = petViewModel, petId = null)
             }
         }
         composable(AppDestinations.PET_EDIT_WITH_ID_ROUTE) { backStackEntry ->
-            MainContainer(currentRoute = AppDestinations.PET_LIST_ROUTE, navController = navController) {
+            MainContainer(currentRoute = AppDestinations.PET_LIST_ROUTE, navController = navController, showPetSearch = false, showBackButton = true) {
                 val petViewModel: PetViewModel = viewModel()
                 val id = backStackEntry.arguments?.getString("id")?.toIntOrNull()
                 EditPetScreen(navController = navController, petViewModel = petViewModel, petId = id)
@@ -185,9 +196,31 @@ fun PawPlanNavHost(
                 PlannerScreen(navController = navController)
             }
         }
+        composable(AppDestinations.REMINDER_ADD_ROUTE) {
+            MainContainer(currentRoute = AppDestinations.PLANNER_ROUTE, navController = navController, showPetSearch = false, showBackButton = true) {
+                de.lshorizon.pawplan.ui.screens.planner.AddReminderScreen(navController = navController)
+            }
+        }
+        composable(AppDestinations.PLANNER_DETAIL_ROUTE) { backStackEntry ->
+            MainContainer(currentRoute = AppDestinations.PLANNER_ROUTE, navController = navController, showPetSearch = false, showBackButton = true) {
+                val id = backStackEntry.arguments?.getString("id")?.toIntOrNull()
+                de.lshorizon.pawplan.ui.screens.planner.ReminderDetailScreen(navController = navController, reminderId = id)
+            }
+        }
         composable(AppDestinations.DOCUMENTS_ROUTE) {
             MainContainer(currentRoute = AppDestinations.DOCUMENTS_ROUTE, navController = navController) {
                 de.lshorizon.pawplan.ui.screens.documents.DocumentsScreen(navController = navController)
+            }
+        }
+        composable(AppDestinations.DOCUMENT_UPLOAD_ROUTE) {
+            MainContainer(currentRoute = AppDestinations.DOCUMENTS_ROUTE, navController = navController, showPetSearch = false, showBackButton = true) {
+                de.lshorizon.pawplan.ui.screens.documents.UploadDocumentScreen(navController = navController)
+            }
+        }
+        composable(AppDestinations.DOCUMENT_DETAIL_ROUTE) { backStackEntry ->
+            MainContainer(currentRoute = AppDestinations.DOCUMENTS_ROUTE, navController = navController, showPetSearch = false, showBackButton = true) {
+                val id = backStackEntry.arguments?.getString("id")?.toIntOrNull()
+                de.lshorizon.pawplan.ui.screens.documents.DocumentDetailScreen(navController = navController, documentId = id)
             }
         }
         composable(AppDestinations.SETTINGS_ROUTE) {
@@ -206,6 +239,9 @@ private fun MainContainer(
     onPetSearchQueryChange: ((String) -> Unit)? = null,
     selectedSpecies: Species? = null,
     onSelectedSpeciesChange: ((Species?) -> Unit)? = null,
+    showPetSearch: Boolean = currentRoute == AppDestinations.PET_LIST_ROUTE,
+    showBackButton: Boolean = false,
+    onBack: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -229,16 +265,29 @@ private fun MainContainer(
                         actionIconContentColor = MaterialTheme.colorScheme.onBackground
                     ),
                     title = { Text(greeting, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold) },
+                    navigationIcon = {
+                        if (showBackButton) {
+                            IconButton(onClick = { (onBack ?: { navController.popBackStack() }).invoke() }) {
+                                Icon(Icons.Outlined.ArrowBack, contentDescription = "Back")
+                            }
+                        }
+                    },
                     actions = {
                         IconButton(onClick = { navController.navigate(AppDestinations.SETTINGS_ROUTE) }) {
-                            Icon(
-                                imageVector = Icons.Outlined.AccountCircle,
-                                contentDescription = "Account"
-                            )
+                            val initial = if (name.isNotBlank()) name.trim().first().uppercaseChar().toString() else "?"
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(de.lshorizon.pawplan.ui.theme.AccentOrange),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(initial, color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            }
                         }
                     }
                 )
-                if (currentRoute == AppDestinations.PET_LIST_ROUTE) {
+                if (showPetSearch) {
                     PetSearchHeader(
                         query = petSearchQuery ?: "",
                         onQueryChange = { onPetSearchQueryChange?.invoke(it) }

@@ -1,26 +1,24 @@
 package de.lshorizon.pawplan.ui.screens.home
 
-import androidx.compose.foundation.background
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Event
-import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.MedicalServices
 import androidx.compose.material.icons.outlined.Pets
 import androidx.compose.material.icons.outlined.PictureAsPdf
 import androidx.compose.material.icons.outlined.Vaccines
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -30,167 +28,124 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import de.lshorizon.pawplan.ui.screens.pets.Species
+import androidx.lifecycle.viewmodel.compose.viewModel
+import de.lshorizon.pawplan.ui.screens.pets.PetAvatar
+import de.lshorizon.pawplan.ui.screens.pets.PetViewModel
 import de.lshorizon.pawplan.ui.theme.AccentOrange
+import de.lshorizon.pawplan.ui.theme.LoginButtonOrange
 import de.lshorizon.pawplan.ui.theme.PrimaryBlue
 import de.lshorizon.pawplan.ui.theme.SecondaryGreen
-import de.lshorizon.pawplan.ui.theme.LoginButtonOrange
-import de.lshorizon.pawplan.ui.theme.RegisterButtonBlue
 import de.lshorizon.pawplan.ui.theme.WarningYellow
-import androidx.compose.ui.tooling.preview.Preview
-import android.content.res.Configuration
 import de.lshorizon.pawplan.ui.theme.reminderCategoryFor
 import de.lshorizon.pawplan.ui.theme.colorFor
+import de.lshorizon.pawplan.ui.components.EmptyState
+import de.lshorizon.pawplan.ui.screens.planner.ReminderViewModel
+import de.lshorizon.pawplan.ui.components.EmptyState
+import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Pets
 
-data class HomeReminder(val id: Int, val title: String, val time: String, val icon: ImageVector, val tint: Color)
-data class HomeDocument(val id: Int, val name: String, val date: String, val icon: ImageVector)
-data class HomePet(
-    val id: Int,
-    val name: String,
-    val age: String,
-    val species: Species = Species.DOG,
-    val imageUrl: String? = null
-)
-
-private val sampleReminders = listOf(
-    HomeReminder(1, "Vaccination: Bello", "Tomorrow 09:00", Icons.Outlined.Vaccines, SecondaryGreen),
-    HomeReminder(2, "Vet appointment: Luna", "Fri 14:30", Icons.Outlined.MedicalServices, PrimaryBlue)
-)
-
-private enum class ReminderCategory { VACCINATION, VET, DEWORMING, GROOMING, WALK, FEEDING, OTHER }
-
-private fun categoryFor(title: String): ReminderCategory {
-    val t = title.lowercase()
-    return when {
-        t.contains("vaccination") || t.contains("impf") -> ReminderCategory.VACCINATION
-        t.contains("vet") || t.contains("tierarzt") -> ReminderCategory.VET
-        t.contains("deworm") || t.contains("entwurm") -> ReminderCategory.DEWORMING
-        t.contains("groom") || t.contains("pflege") -> ReminderCategory.GROOMING
-        t.contains("walk") || t.contains("spazier") -> ReminderCategory.WALK
-        t.contains("feed") || t.contains("fütter") || t.contains("fuetter") -> ReminderCategory.FEEDING
-        else -> ReminderCategory.OTHER
-    }
-}
-
-@Preview(name = "Light Mode", showBackground = true)
-@Composable
-private fun HomeScreenPreview() {
-    HomeScreen(
-        onAddPet = {},
-        onAddReminder = {},
-        onUploadDocument = {},
-        onOpenPet = {},
-        onOpenDocuments = {}
-    )
-}
-
-@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
-@Composable
-private fun HomeScreenPreviewDark() {
-    HomeScreen(
-        onAddPet = {},
-        onAddReminder = {},
-        onUploadDocument = {},
-        onOpenPet = {},
-        onOpenDocuments = {}
-    )
-}
-
-private fun colorForCategory(cat: ReminderCategory): Color = when (cat) {
-    ReminderCategory.VACCINATION -> SecondaryGreen
-    ReminderCategory.VET -> WarningYellow
-    ReminderCategory.DEWORMING -> AccentOrange
-    ReminderCategory.GROOMING -> PrimaryBlue
-    ReminderCategory.WALK -> PrimaryBlue
-    ReminderCategory.FEEDING -> LoginButtonOrange
-    ReminderCategory.OTHER -> PrimaryBlue
-}
-
-private val sampleDocuments = listOf(
-    HomeDocument(1, "Vaccination_Bello.pdf", "2 days ago", Icons.Outlined.PictureAsPdf),
-    HomeDocument(2, "LabReport_Max.pdf", "1 week ago", Icons.Outlined.Description)
-)
-
-private val samplePets = listOf(
-    HomePet(1, "Bello", "3 years", species = Species.DOG, imageUrl = null),
-    HomePet(2, "Luna", "1 year", species = Species.CAT, imageUrl = null)
-)
+// Live data is used from repositories via screens elsewhere; Home shows summaries or empty states.
 
 @Composable
 fun HomeScreen(
     onAddPet: () -> Unit,
     onAddReminder: () -> Unit,
     onUploadDocument: () -> Unit,
-    onOpenPet: () -> Unit,
-    onOpenDocuments: () -> Unit
+    onOpenPetList: () -> Unit,
+    onOpenDocuments: () -> Unit,
+    onOpenPetDetail: (Int) -> Unit = {}
 ) {
+    val petViewModel: PetViewModel = viewModel()
+    val pets = petViewModel.pets.collectAsState().value
+    val reminderViewModel: ReminderViewModel = viewModel()
+    val reminders = reminderViewModel.items.collectAsState().value
+
     LazyColumn(
-        modifier = Modifier
-            .padding(16.dp),
+        modifier = Modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-
         item { SectionTitle("Upcoming Reminders") }
-        items(sampleReminders) { r ->
-            val tint = colorFor(reminderCategoryFor(r.title))
-            Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+        if (reminders.isEmpty()) {
+            item {
+                EmptyState(
+                    icon = Icons.Outlined.Event,
+                    title = "No reminders yet",
+                    actionLabel = "Add Reminder",
+                    actionColor = SecondaryGreen,
+                    onActionClick = onAddReminder
+                )
+            }
+        } else {
+            items(reminders.take(5)) { r ->
+                val tint = colorFor(reminderCategoryFor(r.title))
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                 ) {
-                    Icon(r.icon, contentDescription = null, tint = tint)
-                    Spacer(Modifier.size(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(r.title, style = MaterialTheme.typography.titleMedium)
-                        Text(r.time, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val icon = when (reminderCategoryFor(r.title)) {
+                            de.lshorizon.pawplan.ui.theme.ReminderCategory.VACCINATION -> Icons.Outlined.Vaccines
+                            de.lshorizon.pawplan.ui.theme.ReminderCategory.VET -> Icons.Outlined.MedicalServices
+                            de.lshorizon.pawplan.ui.theme.ReminderCategory.DEWORMING -> Icons.Outlined.Event
+                            de.lshorizon.pawplan.ui.theme.ReminderCategory.GROOMING -> Icons.Outlined.Event
+                            de.lshorizon.pawplan.ui.theme.ReminderCategory.WALK -> Icons.Outlined.Event
+                            de.lshorizon.pawplan.ui.theme.ReminderCategory.FEEDING -> Icons.Outlined.Event
+                            else -> Icons.Outlined.Event
+                        }
+                        Icon(icon, contentDescription = null, tint = tint)
+                        Spacer(Modifier.size(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(r.title, style = MaterialTheme.typography.titleMedium)
+                            Text(r.time, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
             }
         }
 
         item { SectionTitle("Recently Added Documents") }
-        items(sampleDocuments) { d ->
-            Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(d.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.size(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(d.name, style = MaterialTheme.typography.titleMedium)
-                        Text(d.date, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-            }
+        item {
+            EmptyState(
+                icon = Icons.Outlined.Description,
+                title = "No documents yet",
+                actionLabel = "Upload Document",
+                actionColor = PrimaryBlue,
+                onActionClick = onUploadDocument
+            )
         }
 
         item { SectionTitle("My Pets") }
-        items(samplePets) { p ->
+        if (pets.isEmpty()) {
+            item {
+                EmptyState(
+                    icon = Icons.Outlined.Pets,
+                    title = "No pets yet",
+                    actionLabel = "Add Pet",
+                    actionColor = LoginButtonOrange,
+                    onActionClick = onAddPet
+                )
+            }
+        } else items(pets) { p ->
             Card(
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onOpenPetDetail(p.id) }
             ) {
                 Row(
                     modifier = Modifier
@@ -198,19 +153,23 @@ fun HomeScreen(
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    HomePetAvatar(p)
+                    PetAvatar(p)
                     Spacer(Modifier.size(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(p.name, style = MaterialTheme.typography.titleMedium)
-                        Text(p.age, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        val subtitle = if (p.breed.isNotBlank()) p.breed else p.species.name
+                        Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                    Icon(
+                        imageVector = Icons.Outlined.ChevronRight,
+                        contentDescription = "Open details",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
 
-        item {
-            SectionTitle("Quick Actions")
-        }
+        item { SectionTitle("Quick Actions") }
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -220,7 +179,7 @@ fun HomeScreen(
                     onClick = onAddPet,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = RegisterButtonBlue, contentColor = Color.White)
+                    colors = ButtonDefaults.buttonColors(containerColor = de.lshorizon.pawplan.ui.theme.RegisterButtonBlue, contentColor = Color.White)
                 ) { Icon(Icons.Outlined.Pets, null); Spacer(Modifier.size(8.dp)); Text("New Pet") }
 
                 Button(
@@ -253,33 +212,28 @@ private fun SectionTitle(text: String) {
     Text(text, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 8.dp))
 }
 
+@Preview(name = "Light Mode", showBackground = true)
 @Composable
-private fun HomePetAvatar(pet: HomePet, modifier: Modifier = Modifier) {
-    val size = 40.dp
-    if (pet.imageUrl != null) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(pet.imageUrl)
-                .crossfade(true)
-                .build(),
-            contentDescription = "Pet photo",
-            modifier = modifier.size(size).clip(CircleShape),
-            contentScale = ContentScale.Crop
-        )
-    } else {
-        val emoji = when (pet.species) {
-            Species.DOG -> "🐶"
-            Species.CAT -> "🐱"
-            Species.OTHER -> "🐾"
-        }
-        androidx.compose.foundation.layout.Box(
-            modifier = modifier
-                .size(size)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(emoji)
-        }
-    }
+private fun HomeScreenPreview() {
+    HomeScreen(
+        onAddPet = {},
+        onAddReminder = {},
+        onUploadDocument = {},
+        onOpenPetList = {},
+        onOpenDocuments = {},
+        onOpenPetDetail = {}
+    )
+}
+
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Composable
+private fun HomeScreenPreviewDark() {
+    HomeScreen(
+        onAddPet = {},
+        onAddReminder = {},
+        onUploadDocument = {},
+        onOpenPetList = {},
+        onOpenDocuments = {},
+        onOpenPetDetail = {}
+    )
 }

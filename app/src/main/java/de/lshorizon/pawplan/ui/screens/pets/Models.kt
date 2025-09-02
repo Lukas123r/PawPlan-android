@@ -8,6 +8,6 @@ data class Pet(
     val breed: String,
     val birthdate: String = "",
     val species: Species = Species.DOG,
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val docId: String? = null
 )
-

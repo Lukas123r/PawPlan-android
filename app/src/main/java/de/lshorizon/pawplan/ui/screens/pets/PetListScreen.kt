@@ -22,6 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -31,20 +33,25 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextOverflow
@@ -57,9 +64,18 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.Observer
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.launch
+import de.lshorizon.pawplan.ui.theme.DangerRed
+import de.lshorizon.pawplan.ui.components.EmptyState
+import androidx.compose.material.icons.outlined.Pets
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,10 +86,26 @@ fun PetListScreen(
     externalSelectedSpecies: Species? = null
 ) {
     val pets by petViewModel.pets.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Observe navigation results for snackbars
+    DisposableEffect(navController, lifecycleOwner) {
+        val handle = navController.currentBackStackEntry?.savedStateHandle
+        val liveData = handle?.getLiveData<String>("snackbar")
+        val observer = Observer<String> { msg ->
+            scope.launch { snackbarHostState.showSnackbar(msg) }
+            handle?.remove<String>("snackbar")
+        }
+        liveData?.observe(lifecycleOwner, observer)
+        onDispose { liveData?.removeObserver(observer) }
+    }
     var query by remember { mutableStateOf("") }
     var selectedSpecies by remember { mutableStateOf<Species?>(null) }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { navController.navigate("pet_edit") },
@@ -150,10 +182,50 @@ fun PetListScreen(
             val q = externalQuery ?: query
             val speciesFilter = externalSelectedSpecies ?: selectedSpecies
             val filtered = pets.filter { (speciesFilter == null || it.species == speciesFilter) && (q.isBlank() || it.name.contains(q, true) || it.breed.contains(q, true)) }
-            items(filtered) { pet ->
-                PetListItem(pet = pet, onClick = {
-                    navController.navigate("pet_detail/${pet.id}")
-                })
+            if (filtered.isEmpty()) {
+                item {
+                    EmptyState(
+                        icon = Icons.Outlined.Pets,
+                        title = "No pets yet",
+                        actionLabel = "Add Pet",
+                        actionColor = de.lshorizon.pawplan.ui.theme.LoginButtonOrange,
+                        onActionClick = { navController.navigate("pet_edit") }
+                    )
+                }
+            }
+            items(filtered, key = { it.id }) { pet ->
+                val dismissState = rememberSwipeToDismissBoxState()
+                LaunchedEffect(dismissState.currentValue) {
+                    if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) {
+                        petViewModel.deletePet(pet.id)
+                        scope.launch { snackbarHostState.showSnackbar("${pet.name} deleted") }
+                    }
+                }
+                SwipeToDismissBox(
+                    state = dismissState,
+                    enableDismissFromEndToStart = true,
+                    enableDismissFromStartToEnd = false,
+                    backgroundContent = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(DangerRed)
+                                .padding(horizontal = 16.dp),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Delete,
+                                contentDescription = null,
+                                tint = Color.White
+                            )
+                        }
+                    }
+                ) {
+                    PetListItem(pet = pet, onClick = {
+                        navController.navigate("pet_detail/${pet.id}")
+                    })
+                }
             }
         }
     }
@@ -209,6 +281,11 @@ fun PetListItem(pet: Pet, onClick: () -> Unit) {
                 Text(text = pet.name, style = MaterialTheme.typography.headlineSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(text = pet.breed, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+            Icon(
+                imageVector = Icons.Outlined.ChevronRight,
+                contentDescription = "Open details",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

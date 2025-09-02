@@ -25,8 +25,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,39 +46,76 @@ import de.lshorizon.pawplan.ui.theme.SecondaryGreen
 import androidx.navigation.compose.rememberNavController
 import de.lshorizon.pawplan.ui.theme.reminderCategoryFor
 import de.lshorizon.pawplan.ui.theme.colorFor
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Observer
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.collectAsState
+import de.lshorizon.pawplan.ui.components.EmptyState
+import androidx.compose.material.icons.outlined.Event
+import androidx.compose.foundation.layout.offset
 
-data class Reminder(val id: Int, val title: String, val time: String, val icon: ImageVector, val tint: Color)
-
-val sampleReminders = listOf(
-    Reminder(1, "Feed Bello", "8:00 AM", Icons.Outlined.Restaurant, AccentOrange),
-    Reminder(2, "Walk Lucy", "9:00 AM", Icons.AutoMirrored.Outlined.DirectionsWalk, PrimaryBlue),
-    Reminder(3, "Vet appointment for Max", "11:30 AM", Icons.Outlined.MedicalServices, SecondaryGreen),
-    Reminder(4, "Play with Luna", "4:00 PM", Icons.Outlined.SportsEsports, PrimaryBlue)
-)
+private fun iconFor(title: String): ImageVector = when (reminderCategoryFor(title)) {
+    de.lshorizon.pawplan.ui.theme.ReminderCategory.FEEDING -> Icons.Outlined.Restaurant
+    de.lshorizon.pawplan.ui.theme.ReminderCategory.WALK -> Icons.AutoMirrored.Outlined.DirectionsWalk
+    de.lshorizon.pawplan.ui.theme.ReminderCategory.VET -> Icons.Outlined.MedicalServices
+    de.lshorizon.pawplan.ui.theme.ReminderCategory.GROOMING -> Icons.Outlined.MedicalServices
+    else -> Icons.Outlined.SportsEsports
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlannerScreen(navController: NavController) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(navController, lifecycleOwner) {
+        val handle = navController.currentBackStackEntry?.savedStateHandle
+        val liveData = handle?.getLiveData<String>("snackbar")
+        val observer = Observer<String> { msg ->
+            scope.launch { snackbarHostState.showSnackbar(msg) }
+            handle?.remove<String>("snackbar")
+        }
+        liveData?.observe(lifecycleOwner, observer)
+        onDispose { liveData?.removeObserver(observer) }
+    }
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { /* TODO: Navigate to add reminder screen */ },
-                containerColor = de.lshorizon.pawplan.ui.theme.LoginButtonOrange
+                onClick = { navController.navigate("reminder_add") },
+                containerColor = de.lshorizon.pawplan.ui.theme.SecondaryGreen
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "Add Reminder")
             }
         }
     ) {
+        val vm: ReminderViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+        val reminders = vm.items.collectAsState().value
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(it),
-            contentPadding = PaddingValues(16.dp),
+                .padding(it)
+                .offset(y = (-32).dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(sampleReminders) {
-                ReminderListItem(reminder = it, onClick = {
-                    // TODO: Navigate to reminder detail screen
+            item {
+                Text("Planner", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 8.dp))
+            }
+            if (reminders.isEmpty()) {
+                item {
+                    EmptyState(
+                        icon = Icons.Outlined.Event,
+                        title = "No reminders yet",
+                        actionLabel = "Add Reminder",
+                        actionColor = de.lshorizon.pawplan.ui.theme.SecondaryGreen,
+                        onActionClick = { navController.navigate("reminder_add") }
+                    )
+                }
+            }
+            items(reminders) { rem ->
+                ReminderListItem(reminder = rem, onClick = {
+                    navController.navigate("planner_detail/${rem.id}")
                 })
             }
         }
@@ -81,7 +123,7 @@ fun PlannerScreen(navController: NavController) {
 }
 
 @Composable
-fun ReminderListItem(reminder: Reminder, onClick: () -> Unit) {
+fun ReminderListItem(reminder: ReminderItem, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -94,7 +136,7 @@ fun ReminderListItem(reminder: Reminder, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             val tint = colorFor(reminderCategoryFor(reminder.title))
-            Icon(reminder.icon, contentDescription = null, tint = tint)
+            Icon(iconFor(reminder.title), contentDescription = null, tint = tint)
             androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.ui.Modifier.size(12.dp))
             Column {
                 Text(text = reminder.title, style = MaterialTheme.typography.headlineSmall)
