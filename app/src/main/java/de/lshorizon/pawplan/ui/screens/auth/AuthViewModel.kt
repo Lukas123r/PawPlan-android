@@ -8,6 +8,7 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import de.lshorizon.pawplan.navigation.AppDestinations
+import de.lshorizon.pawplan.data.UserProfileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -40,9 +41,7 @@ class AuthViewModel : ViewModel() {
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
                 Firebase.auth.createUserWithEmailAndPassword(_uiState.value.email, _uiState.value.password).await()
-                navController.navigate(AppDestinations.HOME_ROUTE) {
-                    popUpTo(AppDestinations.LOGIN_ROUTE) { inclusive = true }
-                }
+                this@AuthViewModel.routeAfterAuth()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message)
             } finally {
@@ -56,9 +55,7 @@ class AuthViewModel : ViewModel() {
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
                 Firebase.auth.signInWithEmailAndPassword(_uiState.value.email, _uiState.value.password).await()
-                navController.navigate(AppDestinations.HOME_ROUTE) {
-                    popUpTo(AppDestinations.LOGIN_ROUTE) { inclusive = true }
-                }
+                this@AuthViewModel.routeAfterAuth()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message)
             } finally {
@@ -92,9 +89,7 @@ class AuthViewModel : ViewModel() {
             try {
                 val credential = GoogleAuthProvider.getCredential(idToken, null)
                 Firebase.auth.signInWithCredential(credential).await()
-                navController.navigate(AppDestinations.HOME_ROUTE) {
-                    popUpTo(AppDestinations.LOGIN_ROUTE) { inclusive = true }
-                }
+                this@AuthViewModel.routeAfterAuth()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message)
             } finally {
@@ -125,3 +120,12 @@ data class AuthUiState(
     val isLoading: Boolean = false,
     val error: String? = null
 )
+
+private suspend fun AuthViewModel.routeAfterAuth() {
+    val repo = UserProfileRepository()
+    val name = try { repo.getUserName() } catch (e: Exception) { null }
+    val target = if (name.isNullOrBlank()) AppDestinations.PROFILE_SETUP_ROUTE else AppDestinations.HOME_ROUTE
+    navController.navigate(target) {
+        popUpTo(AppDestinations.LOGIN_ROUTE) { inclusive = true }
+    }
+}

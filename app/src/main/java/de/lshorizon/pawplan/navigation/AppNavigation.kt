@@ -71,6 +71,7 @@ object AppDestinations {
     const val ONBOARDING_ROUTE = "onboarding"
     const val LOGIN_ROUTE = "login"
     const val REGISTER_ROUTE = "register"
+    const val PROFILE_SETUP_ROUTE = "profile_setup"
     const val PET_LIST_ROUTE = "pet_list"
     const val PET_DETAIL_ROUTE = "pet_detail/{id}"
     const val PET_EDIT_ROUTE = "pet_edit"
@@ -110,6 +111,16 @@ fun PawPlanNavHost(
                 onFinish = {
                     navController.navigate(AppDestinations.LOGIN_ROUTE) {
                         popUpTo(AppDestinations.ONBOARDING_ROUTE) { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable(AppDestinations.PROFILE_SETUP_ROUTE) {
+            de.lshorizon.pawplan.ui.screens.profile.ProfileSetupScreen(
+                onFinished = {
+                    navController.navigate(AppDestinations.HOME_ROUTE) {
+                        popUpTo(AppDestinations.LOGIN_ROUTE) { inclusive = true }
+                        launchSingleTop = true
                     }
                 }
             )
@@ -244,14 +255,11 @@ private fun MainContainer(
     onBack: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val profileRepo = remember { de.lshorizon.pawplan.data.UserProfileRepository() }
     val (name, setName) = remember { mutableStateOf("") }
-    LaunchedEffect(context) {
-        try {
-            de.lshorizon.pawplan.data.OnboardingRepository(context).userName.collect { setName(it) }
-        } catch (_: Throwable) {
-            setName("Preview")
-        }
+    // Load name initially and whenever route changes (e.g., returning from profile setup or settings)
+    LaunchedEffect(currentRoute) {
+        try { setName(profileRepo.getUserName()) } catch (_: Throwable) { setName("") }
     }
     val greeting = if (name.isNotBlank()) "Welcome back, $name" else "Welcome back"
 

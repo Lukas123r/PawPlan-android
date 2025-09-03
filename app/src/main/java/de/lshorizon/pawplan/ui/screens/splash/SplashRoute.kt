@@ -14,19 +14,25 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import de.lshorizon.pawplan.data.OnboardingRepository
 import de.lshorizon.pawplan.navigation.AppDestinations
+import de.lshorizon.pawplan.data.UserProfileRepository
 import kotlinx.coroutines.flow.first
 
 @Composable
 fun SplashRoute(onNavigate: (String) -> Unit) {
     val context = LocalContext.current
     LaunchedEffect(true) {
-        val repo = OnboardingRepository(context)
-        val done = repo.isOnboardingDone.first()
+        val onboardingRepo = OnboardingRepository(context)
+        val done = onboardingRepo.isOnboardingDone.first()
         val user = Firebase.auth.currentUser
         val target = when {
             !done -> AppDestinations.ONBOARDING_ROUTE
-            user != null -> AppDestinations.HOME_ROUTE
-            else -> AppDestinations.LOGIN_ROUTE
+            user == null -> AppDestinations.LOGIN_ROUTE
+            else -> {
+                // User signed in: ensure Firestore name exists (no fallback)
+                val profileRepo = UserProfileRepository()
+                val name = try { profileRepo.getUserName() } catch (e: Exception) { null }
+                if (name.isNullOrBlank()) AppDestinations.PROFILE_SETUP_ROUTE else AppDestinations.HOME_ROUTE
+            }
         }
         onNavigate(target)
     }

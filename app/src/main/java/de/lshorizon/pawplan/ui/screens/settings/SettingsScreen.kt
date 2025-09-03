@@ -31,6 +31,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import de.lshorizon.pawplan.navigation.AppDestinations
 import de.lshorizon.pawplan.data.OnboardingRepository
+import de.lshorizon.pawplan.data.UserProfileRepository
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.launch
@@ -40,11 +41,13 @@ import androidx.compose.foundation.layout.height
 @Composable
 fun SettingsScreen(navController: NavController) {
     val context = LocalContext.current
-    val repo = remember { OnboardingRepository(context) }
+    val onboardingRepo = remember { OnboardingRepository(context) }
+    val profileRepo = remember { UserProfileRepository() }
     val scope = rememberCoroutineScope()
-    val userName by repo.userName.collectAsState(initial = "")
     val (nameInput, setNameInput) = remember { mutableStateOf("") }
-    LaunchedEffect(userName) { setNameInput(userName) }
+    LaunchedEffect(Unit) {
+        try { setNameInput(profileRepo.getUserName()) } catch (_: Exception) {}
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -56,7 +59,7 @@ fun SettingsScreen(navController: NavController) {
                     name = nameInput,
                     onNameChange = setNameInput,
                     onSave = {
-                        scope.launch { repo.setUserName(nameInput.trim()) }
+                        scope.launch { profileRepo.setUserName(nameInput.trim()) }
                     }
                 )
             }

@@ -1,13 +1,22 @@
 rules_version = '2';
 service cloud.firestore {
-match /databases/{database}/documents {
+  match /databases/{database}/documents {
     function isOwner(uid) {
       return request.auth != null && request.auth.uid == uid;
     }
 
+    // User profile document (stores 'name') and user subcollections
     match /users/{uid} {
-      allow read, write: if isOwner(uid);
+      // Restrict profile doc fields and allow owner-only access
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['name'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100;
+      allow delete: if isOwner(uid);
 
+      // Pets subcollection
       match /pets/{docId} {
         allow read: if isOwner(uid);
         allow create, update: if isOwner(uid)
@@ -21,6 +30,7 @@ match /databases/{database}/documents {
         allow delete: if isOwner(uid);
       }
 
+      // Documents subcollection (metadata only; files in Storage)
       match /documents/{docId} {
         allow read: if isOwner(uid);
         allow create, update: if isOwner(uid)
@@ -32,6 +42,7 @@ match /databases/{database}/documents {
         allow delete: if isOwner(uid);
       }
 
+      // Reminders subcollection
       match /reminders/{docId} {
         allow read: if isOwner(uid);
         allow create, update: if isOwner(uid)
@@ -42,11 +53,13 @@ match /databases/{database}/documents {
         allow delete: if isOwner(uid);
       }
 
+      // Catch-all for any future subcollections under the user (owner-only)
       match /{collection=**}/{docId} {
         allow read, write: if isOwner(uid);
       }
     }
 
+    // Deny everything else by default
     match /{document=**} { allow read, write: if false; }
-}
+  }
 }

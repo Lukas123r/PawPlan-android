@@ -108,7 +108,6 @@ fun OnboardingScreen(onFinish: () -> Unit) {
     val pagerState = rememberPagerState { pages.size }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val (nameInput, setNameInput) = remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -138,17 +137,7 @@ fun OnboardingScreen(onFinish: () -> Unit) {
                     }
                 }
 
-                // On last page, ask for user's name
-                if (page == pages.lastIndex) {
-                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.size(16.dp))
-                    OutlinedTextField(
-                        value = nameInput,
-                        onValueChange = setNameInput,
-                        label = { Text(stringResource(id = R.string.onb_name_label)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(0.8f)
-                    )
-                }
+                // Removed name prompt from onboarding; ask after login instead
             }
         }
 
@@ -175,9 +164,6 @@ fun OnboardingScreen(onFinish: () -> Unit) {
             OutlinedButton(
                 onClick = {
                 scope.launch {
-                    if (nameInput.isNotBlank()) {
-                        OnboardingRepository(context).setUserName(nameInput.trim())
-                    }
                     OnboardingRepository(context).setOnboardingDone(true)
                     onFinish()
                 }
@@ -191,9 +177,6 @@ fun OnboardingScreen(onFinish: () -> Unit) {
                 onClick = {
                     scope.launch {
                         if (isLast) {
-                            if (nameInput.isNotBlank()) {
-                                OnboardingRepository(context).setUserName(nameInput.trim())
-                            }
                             OnboardingRepository(context).setOnboardingDone(true)
                             onFinish()
                         } else {
