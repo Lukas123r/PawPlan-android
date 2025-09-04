@@ -40,7 +40,7 @@ android {
     }
 }
 
-dependencies {
+dependencies {`n    implementation(libs.androidx.appcompat)
     implementation(libs.coil.compose)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play)
@@ -86,3 +86,4 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
+

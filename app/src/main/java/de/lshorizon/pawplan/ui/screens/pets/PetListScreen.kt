@@ -76,6 +76,11 @@ import kotlinx.coroutines.launch
 import de.lshorizon.pawplan.ui.theme.DangerRed
 import de.lshorizon.pawplan.ui.components.EmptyState
 import androidx.compose.material.icons.outlined.Pets
+import de.lshorizon.pawplan.data.SettingsRepository
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,6 +94,8 @@ fun PetListScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
+    val context = LocalContext.current
+    val settings by remember { SettingsRepository(context) }.state.collectAsState(initial = de.lshorizon.pawplan.data.SettingsState())
 
     // Observe navigation results for snackbars
     DisposableEffect(navController, lifecycleOwner) {
@@ -194,37 +201,63 @@ fun PetListScreen(
                 }
             }
             items(filtered, key = { it.id }) { pet ->
-                val dismissState = rememberSwipeToDismissBoxState()
-                LaunchedEffect(dismissState.currentValue) {
-                    if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) {
-                        petViewModel.deletePet(pet.id)
-                        scope.launch { snackbarHostState.showSnackbar("${pet.name} deleted") }
-                    }
-                }
-                SwipeToDismissBox(
-                    state = dismissState,
-                    enableDismissFromEndToStart = true,
-                    enableDismissFromStartToEnd = false,
-                    backgroundContent = {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(DangerRed)
-                                .padding(horizontal = 16.dp),
-                            contentAlignment = Alignment.CenterEnd
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Delete,
-                                contentDescription = null,
-                                tint = Color.White
-                            )
+                var showConfirm by remember { mutableStateOf(false) }
+                if (settings.confirmBeforeDelete) {
+                    // No swipe delete; show inline delete via item action
+                    PetListItem(
+                        pet = pet,
+                        onClick = { navController.navigate("pet_detail/${pet.id}") },
+                        onDelete = { showConfirm = true }
+                    )
+                } else {
+                    val dismissState = rememberSwipeToDismissBoxState()
+                    LaunchedEffect(dismissState.currentValue) {
+                        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) {
+                            petViewModel.deletePet(pet.id)
+                            scope.launch { snackbarHostState.showSnackbar("${pet.name} deleted") }
                         }
                     }
-                ) {
-                    PetListItem(pet = pet, onClick = {
-                        navController.navigate("pet_detail/${pet.id}")
-                    })
+                    SwipeToDismissBox(
+                        state = dismissState,
+                        enableDismissFromEndToStart = true,
+                        enableDismissFromStartToEnd = false,
+                        backgroundContent = {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(DangerRed)
+                                    .padding(horizontal = 16.dp),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Delete,
+                                    contentDescription = null,
+                                    tint = Color.White
+                                )
+                            }
+                        }
+                    ) {
+                        PetListItem(pet = pet, onClick = {
+                            navController.navigate("pet_detail/${pet.id}")
+                        })
+                    }
+                }
+
+                if (showConfirm) {
+                    AlertDialog(
+                        onDismissRequest = { showConfirm = false },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showConfirm = false
+                                petViewModel.deletePet(pet.id)
+                                scope.launch { snackbarHostState.showSnackbar("${pet.name} deleted") }
+                            }) { Text(stringResource(id = de.lshorizon.pawplan.R.string.delete), color = DangerRed) }
+                        },
+                        dismissButton = { TextButton(onClick = { showConfirm = false }) { Text(stringResource(id = de.lshorizon.pawplan.R.string.cancel)) } },
+                        title = { Text(stringResource(id = de.lshorizon.pawplan.R.string.delete_pet_title)) },
+                        text = { Text(stringResource(id = de.lshorizon.pawplan.R.string.delete_pet_text, pet.name)) }
+                    )
                 }
             }
         }
@@ -263,7 +296,7 @@ fun PetAvatar(pet: Pet, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun PetListItem(pet: Pet, onClick: () -> Unit) {
+fun PetListItem(pet: Pet, onClick: () -> Unit, onDelete: (() -> Unit)? = null) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -281,11 +314,21 @@ fun PetListItem(pet: Pet, onClick: () -> Unit) {
                 Text(text = pet.name, style = MaterialTheme.typography.headlineSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(text = pet.breed, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            Icon(
-                imageVector = Icons.Outlined.ChevronRight,
-                contentDescription = "Open details",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (onDelete != null) {
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Outlined.Delete,
+                        contentDescription = "Delete",
+                        tint = DangerRed
+                    )
+                }
+            } else {
+                Icon(
+                    imageVector = Icons.Outlined.ChevronRight,
+                    contentDescription = "Open details",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

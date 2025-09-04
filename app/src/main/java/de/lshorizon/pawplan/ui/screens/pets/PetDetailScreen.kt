@@ -27,10 +27,16 @@ import androidx.navigation.compose.rememberNavController
 import de.lshorizon.pawplan.ui.theme.DangerRed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
+import de.lshorizon.pawplan.data.SettingsRepository
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun PetDetailScreen(navController: NavController, petId: Int, petViewModel: PetViewModel = viewModel()) {
     val pets by petViewModel.pets.collectAsState()
+    val context = LocalContext.current
+    val settings by remember { SettingsRepository(context) }.state.collectAsState(initial = de.lshorizon.pawplan.data.SettingsState())
     var showConfirm by remember { mutableStateOf(false) }
     val pet = pets.firstOrNull { it.id == petId }
     Column(
@@ -53,7 +59,13 @@ fun PetDetailScreen(navController: NavController, petId: Int, petViewModel: PetV
                     Text("Edit")
                 }
                 Button(
-                    onClick = { showConfirm = true },
+                    onClick = {
+                        if (settings.confirmBeforeDelete) showConfirm = true else {
+                            petViewModel.deletePet(pet.id)
+                            navController.previousBackStackEntry?.savedStateHandle?.set("snackbar", "Pet deleted")
+                            navController.popBackStack()
+                        }
+                    },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = DangerRed, contentColor = Color.White)
                 ) {
@@ -68,17 +80,13 @@ fun PetDetailScreen(navController: NavController, petId: Int, petViewModel: PetV
                                 petViewModel.deletePet(pet.id)
                                 navController.previousBackStackEntry?.savedStateHandle?.set("snackbar", "Pet deleted")
                                 navController.popBackStack()
-                            }) {
-                                Text("Delete", color = DangerRed)
-                            }
+                            }) { Text(stringResource(id = de.lshorizon.pawplan.R.string.delete), color = DangerRed) }
                         },
                         dismissButton = {
-                            TextButton(onClick = { showConfirm = false }) {
-                                Text("Cancel")
-                            }
+                            TextButton(onClick = { showConfirm = false }) { Text(stringResource(id = de.lshorizon.pawplan.R.string.cancel)) }
                         },
-                        title = { Text("Delete pet?") },
-                        text = { Text("Are you sure you want to delete ${pet.name}?") }
+                        title = { Text(stringResource(id = de.lshorizon.pawplan.R.string.delete_pet_title)) },
+                        text = { Text(stringResource(id = de.lshorizon.pawplan.R.string.delete_pet_text, pet.name)) }
                     )
                 }
             }

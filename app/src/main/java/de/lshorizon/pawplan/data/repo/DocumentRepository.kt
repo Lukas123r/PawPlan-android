@@ -1,14 +1,20 @@
 package de.lshorizon.pawplan.data.repo
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
+import android.widget.Toast
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.StorageMetadata
 import com.google.firebase.storage.ktx.storage
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import de.lshorizon.pawplan.data.FirebaseConfig
+import de.lshorizon.pawplan.data.SettingsRepository
+import de.lshorizon.pawplan.R
 
 class DocumentRepository(private val context: Context) {
     init { FirebaseConfig.ensurePersistence() }
@@ -16,6 +22,13 @@ class DocumentRepository(private val context: Context) {
     private val docsCol get() = Firebase.firestore.collection("users").document(uid).collection("documents")
 
     suspend fun uploadDocument(uri: Uri, displayName: String?, mimeType: String?): Unit {
+        val settings = SettingsRepository(context).state.first()
+        if (settings.wifiOnlyUploads && !isOnWifi()) {
+            val msg = context.getString(R.string.upload_wifi_only_message)
+            // Show a quick hint and abort
+            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+            throw IllegalStateException(msg)
+        }
         val name = displayName ?: "doc_${System.currentTimeMillis()}"
         val ref = Firebase.storage.reference.child("users/$uid/documents/$name")
         val md = StorageMetadata.Builder().setContentType(mimeType ?: "application/octet-stream").build()
@@ -30,5 +43,12 @@ class DocumentRepository(private val context: Context) {
             "createdAt" to System.currentTimeMillis()
         )
         docsCol.add(meta).await()
+    }
+
+    private fun isOnWifi(): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = cm.activeNetwork ?: return false
+        val caps = cm.getNetworkCapabilities(network) ?: return false
+        return caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
     }
 }

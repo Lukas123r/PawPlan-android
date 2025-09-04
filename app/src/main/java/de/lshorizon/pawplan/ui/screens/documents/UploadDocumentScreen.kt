@@ -30,6 +30,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import de.lshorizon.pawplan.data.repo.DocumentRepository
 import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 
 @Composable
 fun UploadDocumentScreen(navController: NavController) {
@@ -84,10 +85,15 @@ fun UploadDocumentScreen(navController: NavController) {
                     scope.launch {
                         val mime = if (pickedImageUri.value != null) "image/*" else "application/pdf"
                         val name = uri.lastPathSegment
-                        runCatching { repo.uploadDocument(uri, name, mime) }
-                        navController.previousBackStackEntry?.savedStateHandle?.set("snackbar", "Document uploaded")
+                        val result = runCatching { repo.uploadDocument(uri, name, mime) }
                         isUploading = false
-                        navController.popBackStack()
+                        if (result.isSuccess) {
+                            navController.previousBackStackEntry?.savedStateHandle?.set("snackbar", "Document uploaded")
+                            navController.popBackStack()
+                        } else {
+                            val msg = result.exceptionOrNull()?.message ?: "Upload failed"
+                            Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
+                        }
                     }
                 }
             },

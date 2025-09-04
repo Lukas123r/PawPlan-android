@@ -22,6 +22,14 @@ import de.lshorizon.pawplan.ui.screens.auth.AuthViewModel
 import de.lshorizon.pawplan.ui.theme.PawPlanTheme
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import de.lshorizon.pawplan.data.SettingsRepository
+import de.lshorizon.pawplan.data.AppTheme
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
+import androidx.compose.runtime.LaunchedEffect
 
 class MainActivity : ComponentActivity() {
 
@@ -32,7 +40,23 @@ class MainActivity : ComponentActivity() {
 
         installSplashScreen()
         setContent {
-            PawPlanTheme {
+            val settingsRepo = remember { SettingsRepository(this) }
+            val settings by settingsRepo.state.collectAsState(initial = de.lshorizon.pawplan.data.SettingsState())
+            val darkTheme = when (settings.appTheme) {
+                AppTheme.LIGHT -> false
+                AppTheme.DARK -> true
+                AppTheme.SYSTEM -> androidx.compose.foundation.isSystemInDarkTheme()
+            }
+
+            LaunchedEffect(settings.language) {
+                val locales = if (settings.language == "system") {
+                    LocaleListCompat.getEmptyLocaleList()
+                } else {
+                    LocaleListCompat.forLanguageTags(settings.language)
+                }
+                AppCompatDelegate.setApplicationLocales(locales)
+            }
+            PawPlanTheme(darkTheme = darkTheme, dynamicColor = settings.dynamicColor) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

@@ -17,6 +17,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import de.lshorizon.pawplan.data.SettingsRepository
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -27,6 +31,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 @Composable
 fun ReminderDetailScreen(navController: NavController, reminderId: Int?) {
     var showConfirm by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val settings by remember { SettingsRepository(context) }.state.collectAsState(initial = de.lshorizon.pawplan.data.SettingsState())
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -37,7 +43,13 @@ fun ReminderDetailScreen(navController: NavController, reminderId: Int?) {
         Text(text = "ID: ${reminderId ?: -1}")
         Text(text = "This is a placeholder for reminder details.")
         Button(
-            onClick = { showConfirm = true },
+            onClick = {
+                if (settings.confirmBeforeDelete) showConfirm = true else {
+                    // TODO: implement actual deletion when backend exists
+                    navController.previousBackStackEntry?.savedStateHandle?.set("snackbar", "Reminder deleted")
+                    navController.popBackStack()
+                }
+            },
             colors = ButtonDefaults.buttonColors(containerColor = DangerRed, contentColor = Color.White),
             modifier = Modifier.fillMaxWidth().height(48.dp),
             shape = RoundedCornerShape(12.dp)
@@ -53,17 +65,13 @@ fun ReminderDetailScreen(navController: NavController, reminderId: Int?) {
                         // TODO: implement actual deletion when backend exists
                         navController.previousBackStackEntry?.savedStateHandle?.set("snackbar", "Reminder deleted")
                         navController.popBackStack()
-                    }) {
-                        Text("Delete", color = DangerRed)
-                    }
+                    }) { Text(stringResource(id = de.lshorizon.pawplan.R.string.delete), color = DangerRed) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showConfirm = false }) {
-                        Text("Cancel")
-                    }
+                    TextButton(onClick = { showConfirm = false }) { Text(stringResource(id = de.lshorizon.pawplan.R.string.cancel)) }
                 },
-                title = { Text("Delete reminder?") },
-                text = { Text("Are you sure you want to delete this reminder?") }
+                title = { Text(stringResource(id = de.lshorizon.pawplan.R.string.delete_reminder_title)) },
+                text = { Text(stringResource(id = de.lshorizon.pawplan.R.string.delete_reminder_text)) }
             )
         }
     }
